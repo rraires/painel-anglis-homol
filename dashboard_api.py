@@ -9,7 +9,7 @@ import cv2
 st.set_page_config(layout='wide')
 
 st.sidebar.image('logo_anglis-bg.png',width=200 )
-col1, col2, col3 = st.columns([2,1,1])
+col1, col2, col3 = st.columns([2,1,2])
 # col1.image('logo_anglis-bg.png',width=200 )
 col1.header('Painel de Monitoração')
 st.write("---")
@@ -25,7 +25,7 @@ selecao = st.sidebar.selectbox('Cliente',data.keys())
 # selecao = 'Joaquim Aires Martins'
 dict_cliente = data[selecao]['data']
 lista_comodos = dict_cliente.keys()
-col3.header(selecao)
+col3.subheader(selecao)
 
 # st.write(data[selecao])
 # st.write(dado)
@@ -38,6 +38,9 @@ col3.header(selecao)
 #     else:
 #         st.write(key,' - OFFLINE - Último Keepalive: ', data[selecao][key]['last_keepalive'])
 
+
+if st.sidebar.checkbox('Raw Data'):
+    st.sidebar.write(dict_cliente)
 
 # Colunas para mostrar as informações de cada quarto
 col1, col2, col3, col4 = st.columns(4)
