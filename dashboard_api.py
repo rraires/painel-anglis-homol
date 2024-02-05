@@ -16,7 +16,7 @@ st.write("---")
 # col3.image('logo_elissa.png', width=120)
 
 
-#API de Status Novo
+# API de Status Novo
 
 url = 'http://app.anglis.com.br:8081/tudo'
 response = requests.get(url)
