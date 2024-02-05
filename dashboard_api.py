@@ -38,6 +38,7 @@ col3.subheader(selecao)
 #     else:
 #         st.write(key,' - OFFLINE - Último Keepalive: ', data[selecao][key]['last_keepalive'])
 
+st.sidebar.button('Atualizar')
 
 if st.sidebar.checkbox('Raw Data'):
     st.sidebar.write(dict_cliente)
@@ -64,7 +65,11 @@ for i, comodo in enumerate(lista_comodos):
         queda = int(dict_cliente[comodo]['people_status'])
         presenca = int(dict_cliente[comodo]['num_people'])
         movimento = int(dict_cliente[comodo]['vel'])
-        if (queda != 2) and (presenca == -1) and (movimento >= 2):
+        last_keepalive = int(dict_cliente[comodo]['last_keepalive'])
+        if (last_keepalive > 40):
+            status = "Sensor OffLine"
+            card = './icones/bold_offline.png'
+        elif (queda != 2) and (presenca == -1) and (movimento >= 2):
             status = "Pessoa em Movimento"
             card = './icones/bold_movimento_verde.png'
         elif (queda != 2) and (presenca == -1) and (movimento <= 1):
@@ -80,6 +85,7 @@ for i, comodo in enumerate(lista_comodos):
             status = "Ninguém no Cômodo"
             card = './icones/bold_fora_quarto_verde.png'
     else:
+        status = "Sensor OffLine"
         card = './icones/bold_offline.png'
         
     # Mostrar as informações do quarto
