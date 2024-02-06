@@ -63,7 +63,10 @@ for i, comodo in enumerate(lista_comodos):
     
     if "last_keepalive" in dict_cliente[comodo]:
         queda = int(dict_cliente[comodo]['people_status'])
-        presenca = int(dict_cliente[comodo]['num_people'])
+        try:
+            presenca = int(dict_cliente[comodo]['num_people'])
+        except:
+            presenca = -1
         movimento = int(dict_cliente[comodo]['vel'])
         last_keepalive = int(dict_cliente[comodo]['last_keepalive'])
         if (last_keepalive > 40):
@@ -96,3 +99,5 @@ for i, comodo in enumerate(lista_comodos):
         card = cv2.cvtColor(card, cv2.COLOR_BGR2RGB)
         
         col.image(card)
+# time.sleep(5)
+# st.rerun()
