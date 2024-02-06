@@ -42,6 +42,7 @@ st.sidebar.button('Atualizar')
 
 if st.sidebar.checkbox('Raw Data'):
     st.sidebar.write(dict_cliente)
+    
 
 # Colunas para mostrar as informações de cada quarto
 col1, col2, col3, col4 = st.columns(4)
@@ -64,7 +65,7 @@ for i, comodo in enumerate(lista_comodos):
     if "last_keepalive" in dict_cliente[comodo]:
         people_status = int(dict_cliente[comodo]['people_status'])
         try:
-            num_people = int(dict_cliente[comodo]['num_people'])
+            num_people = dict_cliente[comodo]['num_people']
         except:
             num_people = 0
         vel = int(dict_cliente[comodo]['vel'])
@@ -103,9 +104,14 @@ for i, comodo in enumerate(lista_comodos):
         elif (people_status == 2):
             status = "Queda!"
             card = './icones/bold_queda.png'
+
+        # if isinstance(num_people, list):
+        #     st.sidebar.write('É uma Lista')
+        # else:
+        #     st.sidebar.write('É uma Inteiro')
     else:
         status = "Sensor OffLine"
-        card = './icones/bold_offline.png'
+        card = './icones/bold_offline_1.png'
         
     # Mostrar as informações do quarto
     with col:
@@ -115,5 +121,7 @@ for i, comodo in enumerate(lista_comodos):
         card = cv2.cvtColor(card, cv2.COLOR_BGR2RGB)
         
         col.image(card)
+
+
 # time.sleep(5)
 # st.rerun()
