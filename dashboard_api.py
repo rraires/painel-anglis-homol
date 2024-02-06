@@ -62,31 +62,47 @@ for i, comodo in enumerate(lista_comodos):
     # Capturar dados do comodo
     
     if "last_keepalive" in dict_cliente[comodo]:
-        queda = int(dict_cliente[comodo]['people_status'])
+        people_status = int(dict_cliente[comodo]['people_status'])
         try:
-            presenca = int(dict_cliente[comodo]['num_people'])
+            num_people = int(dict_cliente[comodo]['num_people'])
         except:
-            presenca = -1
-        movimento = int(dict_cliente[comodo]['vel'])
+            num_people = 0
+        vel = int(dict_cliente[comodo]['vel'])
         last_keepalive = int(dict_cliente[comodo]['last_keepalive'])
         if (last_keepalive > 40):
             status = "Sensor OffLine"
             card = './icones/bold_offline.png'
-        elif (queda != 2) and (presenca == -1) and (movimento >= 2):
+
+        ### Lógica antiga
+        # elif (people_status != 2) and (num_people == -1) and (vel >= 2):
+        #     status = "Pessoa em Movimento"
+        #     card = './icones/bold_movimento_verde.png'
+        # elif (people_status != 2) and (num_people == -1) and (vel <= 1):
+        #     status = "Pessoa Parada"
+        #     card = './icones/bold_parado_verde.png'
+        # elif (people_status != 2) and (num_people == 0):
+        #     status = "Ninguém no Cômodo"
+        #     card = './icones/bold_fora_quarto_verde.png'
+        # elif (people_status == 2):
+        #     status = "Queda!"
+        #     card = './icones/bold_queda.png'
+        # elif (vel == 0):
+        #     status = "Ninguém no Cômodo"
+        #     card = './icones/bold_fora_quarto_verde.png'
+            
+        ###Lógica nova    
+        elif (people_status != 2) and (vel >= 2):
             status = "Pessoa em Movimento"
             card = './icones/bold_movimento_verde.png'
-        elif (queda != 2) and (presenca == -1) and (movimento <= 1):
+        elif (people_status != 2) and (num_people != 0) and (vel <= 1):
             status = "Pessoa Parada"
             card = './icones/bold_parado_verde.png'
-        elif (queda != 2) and (presenca == 0):
+        elif (people_status != 2) and (num_people == 0):
             status = "Ninguém no Cômodo"
             card = './icones/bold_fora_quarto_verde.png'
-        elif (queda == 2):
+        elif (people_status == 2):
             status = "Queda!"
             card = './icones/bold_queda.png'
-        elif (movimento == 0):
-            status = "Ninguém no Cômodo"
-            card = './icones/bold_fora_quarto_verde.png'
     else:
         status = "Sensor OffLine"
         card = './icones/bold_offline.png'
