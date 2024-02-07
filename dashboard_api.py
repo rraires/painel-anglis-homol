@@ -21,22 +21,20 @@ st.write("---")
 url = 'http://app.anglis.com.br:8081/tudo'
 response = requests.get(url)
 data = response.json()
-selecao = st.sidebar.selectbox('Cliente',data.keys())
-# selecao = 'Joaquim Aires Martins'
-dict_cliente = data[selecao]['data']
-lista_comodos = dict_cliente.keys()
+
+dict_lista_clientes = {}
+for cod_cliente in data.keys():
+    dict_lista_clientes[data[cod_cliente]['residente']] = int(cod_cliente)
+
+selecao = st.sidebar.selectbox('Cliente',dict_lista_clientes.keys())
 col3.subheader(selecao)
+# # selecao = 'Joaquim Aires Martins'
+cod_cliente = dict_lista_clientes[selecao] 
+dict_cliente = data[str(cod_cliente)]['data']
 
-# st.write(data[selecao])
-# st.write(dado)
-
-# for key in data[selecao].keys():
-#     if data[selecao][key] == None:
-#         st.write(key,' - OFFLINE')
-#     elif (data[selecao][key] != None) and (data[selecao][key]['last_keepalive'] <= 40):
-#         st.write(key,' - ONLINE - Último Keepalive: ', data[selecao][key]['last_keepalive'])
-#     else:
-#         st.write(key,' - OFFLINE - Último Keepalive: ', data[selecao][key]['last_keepalive'])
+dict_lista_comodos = {}
+for cod_comodo in dict_cliente.keys():
+    dict_lista_comodos[dict_cliente[cod_comodo]['comodo']] = int(cod_comodo)
 
 st.sidebar.button('Atualizar')
 
@@ -49,7 +47,7 @@ col1, col2, col3, col4 = st.columns(4)
 
 
 # Loop pelos comodos
-for i, comodo in enumerate(lista_comodos):
+for i, comodo in enumerate(dict_lista_comodos.keys()):
     # Selecionar a coluna para mostrar as informações
     if i % 4 == 0:
         col = col1
@@ -62,17 +60,17 @@ for i, comodo in enumerate(lista_comodos):
     
     # Capturar dados do comodo
     
-    if "last_keepalive" in dict_cliente[comodo]:
-        people_status = int(dict_cliente[comodo]['people_status'])
+    if "last_keepalive" in dict_cliente[str(dict_lista_comodos[str(comodo)])]:
+        people_status = int(dict_cliente[str(dict_lista_comodos[str(comodo)])]['people_status'])
         try:
-            num_people = dict_cliente[comodo]['num_people']
+            num_people = dict_cliente[str(dict_lista_comodos[str(comodo)])]['num_people']
         except:
             num_people = 0
-        vel = int(dict_cliente[comodo]['vel'])
-        last_keepalive = int(dict_cliente[comodo]['last_keepalive'])
+        vel = int(dict_cliente[str(dict_lista_comodos[str(comodo)])]['vel'])
+        last_keepalive = int(dict_cliente[str(dict_lista_comodos[str(comodo)])]['last_keepalive'])
         if (last_keepalive > 40):
             status = "Sensor OffLine"
-            card = './icones/bold_offline.png'
+            card = './icones/bold_offline_1.png'
 
         ### Lógica antiga
         # elif (people_status != 2) and (num_people == -1) and (vel >= 2):
@@ -104,11 +102,7 @@ for i, comodo in enumerate(lista_comodos):
         elif (people_status == 2):
             status = "Queda!"
             card = './icones/bold_queda.png'
-
-        # if isinstance(num_people, list):
-        #     st.sidebar.write('É uma Lista')
-        # else:
-        #     st.sidebar.write('É uma Inteiro')
+            
     else:
         status = "Sensor OffLine"
         card = './icones/bold_offline_1.png'
@@ -121,7 +115,3 @@ for i, comodo in enumerate(lista_comodos):
         card = cv2.cvtColor(card, cv2.COLOR_BGR2RGB)
         
         col.image(card)
-
-
-# time.sleep(5)
-# st.rerun()
