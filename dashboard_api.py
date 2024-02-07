@@ -66,7 +66,7 @@ for i, comodo in enumerate(dict_lista_comodos.keys()):
             num_people = dict_cliente[str(dict_lista_comodos[str(comodo)])]['num_people']
         except:
             num_people = 0
-        vel = int(dict_cliente[str(dict_lista_comodos[str(comodo)])]['vel'])
+        vel = dict_cliente[str(dict_lista_comodos[str(comodo)])]['vel'][0] ####### Arrumar para ver as varias velocidades de todas pessoas
         last_keepalive = int(dict_cliente[str(dict_lista_comodos[str(comodo)])]['last_keepalive'])
         if (last_keepalive > 40):
             status = "Sensor OffLine"
