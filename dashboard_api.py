@@ -53,23 +53,42 @@ dict_lista_clientes = {"Eric Casa Teste":52825284, "Roberto Martins":94852179, "
 while True:
     for i, cliente in enumerate(dict_lista_clientes.keys()):
         dict_cliente = api_dados(dict_lista_clientes[cliente])
-        match dict_cliente['alarme_id']:
-            case 0:
-                card = './icones/bold_fora_quarto_verde.png'
-            case 3:
-                card = './icones/bold_fora_cama_amarelo_parado.png'
-            case 4:
-                card = './icones/bold_fora_cama_amarelo_mov.png'
-            case 5:
-                card = './icones/bold_banheiro_verde_parado.png'
-            case 6:
-                card = './icones/bold_banheiro_verde_mov.png'
-            case 7:
-                card = './icones/bold_pessoas_verde.png'
-            case 8 | 9:
-                card = './icones/bold_queda.png'
-            case _:
-                card = './icones/bold_offline_1.png'
+        if dict_cliente['alarme_id'] == 0:
+            card = './icones/bold_fora_quarto_verde.png'
+        elif dict_cliente['alarme_id'] == 3:
+            card = './icones/bold_fora_cama_amarelo_parado.png'
+        elif dict_cliente['alarme_id'] == 4:
+            card = './icones/bold_fora_cama_amarelo_mov.png'
+        elif dict_cliente['alarme_id'] == 5:
+            card = './icones/bold_banheiro_verde_parado.png'
+        elif dict_cliente['alarme_id'] == 6:
+            card = './icones/bold_banheiro_verde_mov.png'
+        elif dict_cliente['alarme_id'] == 7:
+            card = './icones/bold_pessoas_verde.png'
+        elif dict_cliente['alarme_id'] == 8 or dict_cliente['alarme_id'] == 9:
+            card = './icones/bold_queda.png'
+        else:
+            card = './icones/bold_offline_1.png'
+            
+        # match dict_cliente['alarme_id']:
+        #     case 0:
+        #         card = './icones/bold_fora_quarto_verde.png'
+        #     case 3:
+        #         card = './icones/bold_fora_cama_amarelo_parado.png'
+        #     case 4:
+        #         card = './icones/bold_fora_cama_amarelo_mov.png'
+        #     case 5:
+        #         card = './icones/bold_banheiro_verde_parado.png'
+        #     case 6:
+        #         card = './icones/bold_banheiro_verde_mov.png'
+        #     case 7:
+        #         card = './icones/bold_pessoas_verde.png'
+        #     case 8 | 9:
+        #         card = './icones/bold_queda.png'
+        #     case _:
+        #         card = './icones/bold_offline_1.png'
+
+
         if i % 3 == 0:
             col = col1
         elif i % 3 == 1:
