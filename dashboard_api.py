@@ -43,7 +43,7 @@ def api_dados(cod_cliente):
 
 # st.sidebar.button('Atualizar')
 
-rawdata = st.sidebar.checkbox('Raw Data')
+rawdata = st.sidebar.checkbox('Raw Data', value = True)
 
 
 col1, col2, col3 = st.columns(3)
