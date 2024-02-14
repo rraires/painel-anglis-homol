@@ -46,7 +46,7 @@ def api_dados(cod_cliente):
 rawdata = st.sidebar.checkbox('Raw Data')
 
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3 = st.columns(3)
 
 dict_lista_clientes = {"Eric Casa Teste":52825284, "Roberto Martins":94852179, "Inovabra":56081094 }
 
@@ -69,7 +69,7 @@ while True:
             card = './icones/bold_queda.png'
         else:
             card = './icones/bold_offline_1.png'
-            
+
         # match dict_cliente['alarme_id']:
         #     case 0:
         #         card = './icones/bold_fora_quarto_verde.png'
@@ -100,7 +100,7 @@ while True:
             cv2.putText(img = card, text = f"{cliente}", org = (30, 50), fontFace = cv2.FONT_HERSHEY_DUPLEX,
                         fontScale = 1.0, color = (0, 0, 0), thickness = 2)
             card = cv2.cvtColor(card, cv2.COLOR_BGR2RGB)
-            st.image(card, width=400)
+            st.image(card, width=300)
             if rawdata:
                 st.write(dict_cliente)
     time.sleep(3)
