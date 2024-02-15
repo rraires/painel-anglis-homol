@@ -8,16 +8,7 @@ import cv2
 
 st.set_page_config(layout='wide')
 
-st.sidebar.image('logo_anglis-bg.png',width=200 )
-col1, col2, col3 = st.columns([2,1,2])
-# col1.image('logo_anglis-bg.png',width=200 )
-col1.header('Painel de Monitoração')
-st.write("---")
-# col3.image('logo_elissa.png', width=120)
-
-
 # API de Status Novo
-
 @st.cache_data
 def api_codigos_clientes():
     url = 'http://app.anglis.com.br:8081/tudo'
@@ -35,6 +26,31 @@ def api_dados(cod_cliente):
     data = response.json()
     return data
 
+def painel_elissa():
+    col1, col2, col3 = st.columns([2,1,2])
+    # col1.image('logo_anglis-bg.png',width=200 )
+    col1.header('Painel de Monitoração')
+    col3.image('logo_elissa.png', width=150)
+    st.write("---")
+
+    lista_quartos=[1,2,3,4,5,6,7,8]
+    col1, col2, col3, col4 = st.columns(4)
+    for i in lista_quartos:
+        if i % 4 == 0:
+            col = col1
+        elif i % 4 == 1:
+            col = col2
+        elif i % 4 == 2:
+            col = col3
+        else:
+            col = col4
+        with col:
+            st.image('./icones/bold_fora_quarto_verde.png', width=200)
+
+
+
+
+
 # dict_lista_clientes = api_codigos_clientes()
 # selecao = st.sidebar.selectbox('Cliente',dict_lista_clientes.keys())
 # col3.subheader(selecao)
@@ -43,14 +59,18 @@ def api_dados(cod_cliente):
 
 # st.sidebar.button('Atualizar')
 
-rawdata = st.sidebar.checkbox('Raw Data', value = True)
+def painel_dev():
+    col1, col2, col3 = st.columns([2,1,2])
+    # col1.image('logo_anglis-bg.png',width=200 )
+    col1.header('Painel de Monitoração')
+    st.write("---")
+    # col3.image('logo_elissa.png', width=120)
 
+    col1, col2, col3 = st.columns(3)
 
-col1, col2, col3 = st.columns(3)
+    dict_lista_clientes = {"Eric Casa Teste":52825284, "Roberto Martins":94852179, "Inovabra":56081094 }
 
-dict_lista_clientes = {"Eric Casa Teste":52825284, "Roberto Martins":94852179, "Inovabra":56081094 }
-
-while True:
+    
     for i, cliente in enumerate(dict_lista_clientes.keys()):
         dict_cliente = api_dados(dict_lista_clientes[cliente])
         if dict_cliente['alarme_id'] == 0:
@@ -88,7 +108,6 @@ while True:
         #     case _:
         #         card = './icones/bold_offline_1.png'
 
-
         if i % 3 == 0:
             col = col1
         elif i % 3 == 1:
@@ -101,11 +120,24 @@ while True:
                         fontScale = 1.0, color = (0, 0, 0), thickness = 2)
             card = cv2.cvtColor(card, cv2.COLOR_BGR2RGB)
             st.image(card, width=300)
-            if rawdata:
-                st.write(dict_cliente)
+            st.write(dict_cliente)
     time.sleep(3)
     st.rerun()
-    
+        
+def main():
+    st.sidebar.image('logo_anglis-bg.png',width=200 )
+
+    # rawdata = st.sidebar.checkbox('Raw Data', value = True)
+
+    painel = st.sidebar.selectbox("Painel", ['Dev', 'Elissa Village'])
+    if painel == "Dev":
+        painel_dev()
+    elif painel =="Elissa Village":
+        # painel_elissa()
+        pass
+
+main()
+
 
 
 
