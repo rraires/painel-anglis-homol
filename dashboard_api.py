@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import time
 import cv2
+import random
 
 st.set_page_config(layout='wide')
 
@@ -22,32 +23,85 @@ def api_codigos_clientes():
 
 def api_dados(cod_cliente):
     url = f'http://app.anglis.com.br:8081/{cod_cliente}'
-    response = requests.get(url)
-    data = response.json()
+    try:
+        response = requests.get(url)
+        data = response.json()
+    except:
+        st.write('Erro de conexão com a API')
+        st.stop()
     return data
 
 def painel_elissa():
     col1, col2, col3 = st.columns([2,1,2])
     # col1.image('logo_anglis-bg.png',width=200 )
-    col1.header('Painel de Monitoração')
-    col3.image('logo_elissa.png', width=150)
+    with col1:
+        titulo1 = st.empty()
+    with col3:
+        logo = st.empty()
+    titulo1.header('Painel de Monitoração')
+    logo.image('logo_elissa.png', width=150)
     st.write("---")
 
-    lista_quartos=[1,2,3,4,5,6,7,8]
-    col1, col2, col3, col4 = st.columns(4)
-    for i in lista_quartos:
-        if i % 4 == 0:
-            col = col1
-        elif i % 4 == 1:
-            col = col2
-        elif i % 4 == 2:
-            col = col3
+    col1, col2, col3 = st.columns(3)
+
+    dict_lista_clientes = {"Quarto 120":52825284, "Quarto 121":94852179, "Quarto 122":56081094 }
+
+    for i, cliente in enumerate(dict_lista_clientes.keys()):
+        alarme_id = random.randint(0,9)
+        if alarme_id == 0:
+            card = './icones/bold_fora_quarto_verde.png'
+        elif alarme_id == 1:
+            card = './icones/bold_cama_verde_parado.png'
+        elif alarme_id == 2:
+            card = './icones/bold_cama_verde_mov.png'
+        elif alarme_id == 3:
+            card = './icones/bold_fora_cama_amarelo_parado.png'
+        elif alarme_id == 4:
+            card = './icones/bold_fora_cama_amarelo_mov.png'
+        elif alarme_id == 5:
+            card = './icones/bold_banheiro_verde_parado.png'
+        elif alarme_id == 6:
+            card = './icones/bold_banheiro_verde_mov.png'
+        elif alarme_id == 7:
+            card = './icones/bold_pessoas_verde.png'
+        elif alarme_id == 8 or alarme_id == 9:
+            card = './icones/bold_queda.png'
         else:
-            col = col4
+            card = './icones/bold_offline_1.png'
+
+        # match dict_cliente['alarme_id']:
+        #     case 0:
+        #         card = './icones/bold_fora_quarto_verde.png'
+        #     case 3:
+        #         card = './icones/bold_fora_cama_amarelo_parado.png'
+        #     case 4:
+        #         card = './icones/bold_fora_cama_amarelo_mov.png'
+        #     case 5:
+        #         card = './icones/bold_banheiro_verde_parado.png'
+        #     case 6:
+        #         card = './icones/bold_banheiro_verde_mov.png'
+        #     case 7:
+        #         card = './icones/bold_pessoas_verde.png'
+        #     case 8 | 9:
+        #         card = './icones/bold_queda.png'
+        #     case _:
+        #         card = './icones/bold_offline_1.png'
+
+        if i % 3 == 0:
+            col = col1
+        elif i % 3 == 1:
+            col = col2
+        else:
+            col = col3
         with col:
-            st.image('./icones/bold_fora_quarto_verde.png', width=200)
-
-
+            st.empty()
+            card = cv2.imread(card)
+            cv2.putText(img = card, text = f"{cliente}", org = (30, 50), fontFace = cv2.FONT_HERSHEY_DUPLEX,
+                        fontScale = 1.0, color = (0, 0, 0), thickness = 2)
+            card = cv2.cvtColor(card, cv2.COLOR_BGR2RGB)
+            st.image(card, width=300)
+    time.sleep(10)
+    st.rerun()
 
 
 
@@ -62,9 +116,13 @@ def painel_elissa():
 def painel_dev():
     col1, col2, col3 = st.columns([2,1,2])
     # col1.image('logo_anglis-bg.png',width=200 )
-    col1.header('Painel de Monitoração')
+    with col1:
+        titulo1 = st.empty()
+    with col3:
+        logo = st.empty()
+    titulo1.header('Painel de Monitoração')
+    logo.write(" ")
     st.write("---")
-    # col3.image('logo_elissa.png', width=120)
 
     col1, col2, col3 = st.columns(3)
 
@@ -75,6 +133,10 @@ def painel_dev():
         dict_cliente = api_dados(dict_lista_clientes[cliente])
         if dict_cliente['alarme_id'] == 0:
             card = './icones/bold_fora_quarto_verde.png'
+        elif dict_cliente['alarme_id'] == 1:
+            card = './icones/bold_cama_verde_parado.png'
+        elif dict_cliente['alarme_id'] == 2:
+            card = './icones/bold_cama_verde_mov.png'
         elif dict_cliente['alarme_id'] == 3:
             card = './icones/bold_fora_cama_amarelo_parado.png'
         elif dict_cliente['alarme_id'] == 4:
