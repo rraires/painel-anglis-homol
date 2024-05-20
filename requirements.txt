@@ -1,3 +1,2 @@
 opencv-python-headless
 paho-mqtt
-json
