@@ -190,8 +190,9 @@ with st.form('Data input'):
         df_extracted['timestamp'] = df_bruto['timestamp'].apply(convert_timestamp)
         df_extracted['timestamp'] = pd.to_datetime(df_extracted['timestamp'], format='%d-%m-%Y %H:%M:%S')
         df_extracted = df_extracted.fillna(0)
-        st.write(df_extracted)
         gera_grafico(df_extracted)
+        st.subheader('Dataframe')
+        st.write(df_extracted)
         # Marca o tempo final
         end_time = time.time()
         execution_time = end_time - start_time
