@@ -1,212 +1,200 @@
 import streamlit as st
 import json
-import paho.mqtt.client as mqtt
+import psycopg2
+import pandas as pd
+from datetime import datetime, timedelta
+import requests
 import time
+import plotly.graph_objects as go
 
 
-st.set_page_config(page_title="Dashboard de ocupação", layout="wide")
+st.set_page_config(layout='wide')
 
+col1, col2, col3 = st.columns([1,1,4])
+col1.image('logo_anglis-bg.png', width=120)
+col3.subheader('Consulta dados Históricos')
 
-st.sidebar.image('jumperfour_logo.png')
-st.header("Painel Ocupação de Posições de Trabalho")
+# Função para converter timestamp para datetime no formato ISO 8601
+def convert_timestamp(timestamp):
+    dt = datetime.utcfromtimestamp(timestamp) - timedelta(hours=3)  # Converter para GMT-3
+    return dt.strftime('%d-%m-%Y %H:%M:%S')
 
-
-######################## MQTT #############################
-
-# Variável global para armazenar a mensagem JSON
-current_message = None
-
-# Função chamada quando a conexão com o broker é estabelecida
-def on_connect(client, userdata, flags, rc):
-    print(f"Conectado com o código {rc}")
-    # Subscrever ao tópico desejado
-    client.subscribe("jumperfour2")
-
-# Função chamada quando uma mensagem é recebida
-def on_message(client, userdata, msg):
-    global current_message
+# Função para converter data humada para timestamp EPOCH
+def convert_data_humana(date_str):
     try:
-        # Decodificar a mensagem JSON
-        current_message = json.loads(msg.payload.decode('utf-8'))
+      date_obj = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+      date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+    # date_obj = date_obj + timedelta(hours=3)
+    epoch_time = int(date_obj.timestamp())
+    return epoch_time
+
+# Função para coletar os dados do Banco
+def coleta_banco(data_inicio, data_fim):
+    # Conectar ao banco de dados PostgreSQL
+    conn = psycopg2.connect(
+        host="reports.anglis.com.br",
+        database="anglismonitoramento",
+        user="anglisdbadm",
+        password="anglis777power144"
+    )
+    cur = conn.cursor()
+
+    timestamp_start = convert_data_humana(data_inicio)
+    timestamp_end = convert_data_humana(data_fim)
+
+    # Ler X Registros
+    # Executar a consulta para ler uma amostra de registros filtrados por timestamp
+    cur.execute('''
+        SELECT * FROM dados_json
+        WHERE timestamp BETWEEN %s AND %s;
+    ''', (timestamp_start, timestamp_end))
+
+    # Obter todos os resultados
+    rows = cur.fetchall()
+
+    # Obter os nomes das colunas
+    colnames = [desc[0] for desc in cur.description]
+
+    # Converter os resultados para um DataFrame do Pandas
+    df = pd.DataFrame(rows, columns=colnames)
+    return df
+
+    # Fechar a conexão
+    cur.close()
+    conn.close()
+
+# Função para extrair os dados do JSON
+def extrair_dados(json_str):
+    try:
+        dados = json.loads(json_str)
+        for item in dados:
+            if item.get('Franquia') == selecao_franquia:
+              for residente in item.get('Residentes', []):
+                if residente.get('Residente') == selecao_residente:
+                  for comodo in residente.get('comodos', []):
+                    if comodo.get('comodo') == selecao_comodo:
+                      people = comodo.get('people')
+                      mov = comodo.get('mov')
+                      veloc = comodo.get('veloc')
+                      queda = comodo.get('queda')
+                      alarme_id = comodo.get('alarme_id')
+                      if comodo.get('areas', []) != None and comodo.get('areas', []) != []:
+                        for area in comodo.get('areas', []):
+                          if area.get('nome') == selecao_area:
+                            presenc_area = area.get("presenc")
+                            mov_area = area.get("mov_area")
+                            deitada = area.get("deitada")
+                            sensor_mov = area.get("sensor_mov")
+                      if comodo.get('obj', []) != None and comodo.get('obj', []) != []:
+                        for obj in comodo.get('obj', []):
+                          if obj.get('label') == 'Colaborador':
+                            colaborador = 1
+                          else:
+                            colaborador = 0
+                      else:
+                        colaborador = 0
+        try:
+          return {
+                  "people": people,
+                  "mov": mov,
+                  "veloc": veloc,
+                  "queda": queda,
+                  "alarme_id": alarme_id,
+                  "presenc_area": presenc_area,
+                  "mov_area": mov_area,
+                  "deitada": deitada,
+                  "sensor_mov": sensor_mov,
+                  "colaborador": colaborador
+                }
+        except:
+          return {
+                  "people": people,
+                  "mov": mov,
+                  "veloc": veloc,
+                  "queda": queda,
+                  "alarme_id": alarme_id
+                }
+          
+
     except json.JSONDecodeError as e:
-        print(f"Erro ao decodificar JSON: {e}")
-
-# Criar um cliente MQTT
-client = mqtt.Client()
-
-# Atribuir funções de callback
-client.on_connect = on_connect
-client.on_message = on_message
-
-# Conectar ao broker MQTT
-client.connect("pido.me", 1883, 60)
-
-# Iniciar loop para processar callbacks e reconectar automaticamente
-client.loop_start()
-
-#############################################################
+      print(f"Erro ao decodificar JSON: {e}")
+    # return {"people": None, "mov": None, "queda": None}
 
 
-tab1, tab2 = st.tabs(["Sala A", "Sala B"])
+def gera_grafico(df_extracted):
+    fig = go.Figure()
+    try:
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['people'], name='Presença'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['mov'], name='Movimento'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['queda'], name='Queda'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['alarme_id'], name='alarme_id'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['presenc_area'], name='Presença Area'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['mov_area'], name='Movimento Area'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['deitada'], name='Deitada'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['sensor_mov'], name='Sensor Movimento'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['colaborador'], name='Colaborador'))
+    except:
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['people'], name='Presença'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['mov'], name='Movimento'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['queda'], name='Queda'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['alarme_id'], name='alarme_id'))
+
+    fig.update_layout(title='Graficos')
+
+    st.plotly_chart(fig)
 
 
-with tab1:
-    st.write("**Ocupação em tempo real**")
+url = 'http://app.anglis.com.br:8081/monit'
+response = requests.get(url)
+data_api = response.json()
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+with st.expander('Seleciona o Cliente:', expanded=True):
+    col1, col2, col3, col4 = st.columns(4)
+    franquias = [record.get("Franquia") for record in data_api]
+    selecao_franquia = col1.selectbox("Franquia", franquias)
+    dados_residentes_franquia = [record.get("Residentes") for record in data_api if record.get("Franquia") == selecao_franquia]
+    residentes_franquia = [record.get("Residente") for record in dados_residentes_franquia[0]]
+    selecao_residente = col2.selectbox('Residente', residentes_franquia, key='residente')
+    dados_residente = [record for record in dados_residentes_franquia[0] if record.get("Residente") == selecao_residente]
+    comodos_residente = [record.get("comodo") for record in dados_residente[0]['comodos']]
+    selecao_comodo = col3.selectbox('Cômodo', comodos_residente, key='comodo')
+    dados_comodo = [record for record in dados_residente[0]['comodos'] if record.get("comodo") == selecao_comodo]
+    areas_comodo = [record.get("nome") for record in dados_comodo[0]['areas']]
+    selecao_area = col4.selectbox('Área', areas_comodo, key='area')
 
-    with col1:
-        card1 = st.empty()
-    with col2:
-        card2 = st.empty()
-    with col3:
-        card3 = st.empty()
-    with col4:
-        card4 = st.empty()
-    with col5:
-        card5 = st.empty()
-    with col6:
-        card6 = st.empty()
+with st.form('Data input'):
+    col1, col2 = st.columns(2)
+    date1 = col1.date_input('Selecione data 1', format="DD/MM/YYYY")
+    # date2 = col2.date_input('Selecione data 2', format="DD/MM/YYYY")
 
-    linha1 = st.empty()
+    if st.form_submit_button('Submit'):
+        # st.write(selecao_franquia)
+        # st.write(selecao_residente)
+        # st.write(selecao_comodo)
+        # st.write(selecao_area)
+        # st.write(date1)
+        # st.write(date1 + timedelta(days=1))
 
-    col7, col8, col9, col10, col11, col12 = st.columns(6)
-    with col7:
-        card7 = st.empty()
-    with col8:
-        card8 = st.empty()
-    with col9:
-        card9 = st.empty()
-    with col10:
-        card10 = st.empty()
-    with col11:
-        card11 = st.empty()
-    with col12:
-        card12 = st.empty()
-    linha2= st.empty()
-    info1 = st.empty()
+        data_inicio = str(date1)
+        data_fim = str(date1 + timedelta(days=1))
 
-try:
-    while True:
-        if current_message != None:
+        # Marca o tempo inicial
+        start_time = time.time()
+        df_bruto = coleta_banco(data_inicio, data_fim)
+        # Aplicar a função para extrair os dados
+        df_extracted = df_bruto['json_data'].apply(extrair_dados)
+        # Expandir os dicionários em colunas e adicionar a coluna timestamp
+        df_extracted = pd.concat([df_bruto['timestamp'], pd.json_normalize(df_extracted)], axis=1)
+        # Aplicar a função para converter os timestamps
+        df_extracted['timestamp'] = df_bruto['timestamp'].apply(convert_timestamp)
+        df_extracted['timestamp'] = pd.to_datetime(df_extracted['timestamp'], format='%d-%m-%Y %H:%M:%S')
+        df_extracted = df_extracted.fillna(0)
+        st.write(df_extracted)
+        gera_grafico(df_extracted)
+        # Marca o tempo final
+        end_time = time.time()
+        execution_time = end_time - start_time
+        st.write('Tempo de execução: ', execution_time, ' segundos')
 
-            if current_message['Sala1'][0]['1']:
-                pos1 = 'ocupado.png'
-            else:
-                pos1 = 'vazio.png'
-            if current_message['Sala1'][0]['2']:
-                pos2 = 'ocupado.png'
-            else:
-                pos2 = 'vazio.png'
-            if current_message['Sala1'][0]['3']:
-                pos3 = 'ocupado.png'
-            else:
-                pos3 = 'vazio.png'
-            if current_message['Sala1'][0]['4']:
-                pos4 = 'ocupado.png'
-            else:
-                pos4 = 'vazio.png'
-            if current_message['Sala1'][0]['5']:
-                pos5 = 'ocupado.png'
-            else:
-                pos5 = 'vazio.png'
-            if current_message['Sala1'][0]['6']:
-                pos6 = 'ocupado.png'
-            else:
-                pos6 = 'vazio.png'
-            if current_message['Sala1'][0]['7']:
-                pos7 = 'ocupado.png'
-            else:
-                pos7 = 'vazio.png'
-            if current_message['Sala1'][0]['8']:
-                pos8 = 'ocupado.png'
-            else:
-                pos8 = 'vazio.png'
-            if current_message['Sala1'][0]['9']:
-                pos9 = 'ocupado.png'
-            else:
-                pos9 = 'vazio.png'
-            if current_message['Sala1'][0]['10']:
-                pos10 = 'ocupado.png'
-            else:
-                pos10 = 'vazio.png'
-            if current_message['Sala1'][0]['11']:
-                pos11 = 'ocupado.png'
-            else:
-                pos11 = 'vazio.png'
-            if current_message['Sala1'][0]['12']:
-                pos12 = 'ocupado.png'
-            else:
-                pos12 = 'vazio.png'
 
-            with card1:
-                with st.container():
-                    st.write('**Posição 1**')
-                    st.image(pos1, width=60)
-            with card2:
-                with st.container():
-                    st.write('**Posição 2**')
-                    st.image(pos2, width=60)
-            with card3:
-                with st.container():
-                    st.write('**Posição 3**')
-                    st.image(pos3, width=60)
-            with card4:
-                with st.container():
-                    st.write('**Posição 4**')
-                    st.image(pos4, width=60)
-            with card5:
-                with st.container():
-                    st.write('**Posição 5**')
-                    st.image(pos5, width=60)
-            with card6:
-                with st.container():
-                    st.write('**Posição 6**')
-                    st.image(pos6, width=60)
-            with linha1:
-                st.divider()
-            with card7:
-                with st.container():
-                    st.write('**Posição 7**')
-                    st.image(pos7, width=60)
-            with card8:
-                with st.container():
-                    st.write('**Posição 8**')
-                    st.image(pos8, width=60)
-            with card9:
-                with st.container():
-                    st.write('**Posição 9**')
-                    st.image(pos9, width=60)
-            with card10:
-                with st.container():
-                    st.write('**Posição 10**')
-                    st.image(pos10, width=60)
-            with card11:
-                with st.container():
-                    st.write('**Posição 11**')
-                    st.image(pos11, width=60)
-            with card12:
-                with st.container():
-                    st.write('**Posição 12**')
-                    st.image(pos12, width=60)
-            with linha2:
-                st.divider()
-            with info1:
-                with st.container():
-                    ocupadas = 0
-                    vazias = 0
-
-                    for key, value in current_message['Sala1'][0].items():
-                        if value == True:
-                            ocupadas += 1
-                        else:
-                            vazias += 1
-
-                    taxa_ocupacao = ocupadas/len(current_message['Sala1'][0])
-                    st.metric('Taxa de Ocupação', value=f"{taxa_ocupacao:.0%}")
-        time.sleep(5)
-        pass
-except KeyboardInterrupt:
-    print("Encerrando...")
-    client.loop_stop()
-    client.disconnect()
