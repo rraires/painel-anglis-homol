@@ -27,7 +27,7 @@ def convert_data_humana(date_str):
       date_obj = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
     except ValueError:
       date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-    date_obj = date_obj + timedelta(hours=3)
+    # date_obj = date_obj + timedelta(hours=3)
     epoch_time = int(date_obj.timestamp())
     return epoch_time
 
