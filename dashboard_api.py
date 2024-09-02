@@ -27,7 +27,7 @@ def convert_data_humana(date_str):
       date_obj = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
     except ValueError:
       date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-    date_obj = date_obj + timedelta(hours=3)
+    # date_obj = date_obj + timedelta(hours=3)
     epoch_time = int(date_obj.timestamp())
     return epoch_time
 
@@ -42,6 +42,9 @@ def coleta_banco(data_inicio, data_fim):
         password="anglis777power144"
     )
     cur = conn.cursor()
+
+    # data_inicio = '2024-08-02 10:00:00'
+    # data_fim = '2024-08-02 10:10:00'
 
     timestamp_start = convert_data_humana(data_inicio)
     timestamp_end = convert_data_humana(data_fim)
@@ -68,64 +71,113 @@ def coleta_banco(data_inicio, data_fim):
 
     return df
 
+# # Função para extrair os dados do JSON
+# def extrair_dados(json_str):
+#   try:
+#     dados = json.loads(json_str)
+#     for item in dados:
+#       if item.get('codId') == codId_franquia:
+#         for residente in item.get('Residentes', []):
+#           if residente.get('codId') == codId_residente:
+#             for comodo in residente.get('comodos', []):
+#               if comodo.get('deviceId') == codId_comodo:
+#                 people = comodo.get('people')
+#                 mov = comodo.get('mov')
+#                 veloc = comodo.get('veloc')
+#                 queda = comodo.get('queda')
+#                 alarme_id = comodo.get('alarme_id')
+#                 if comodo.get('areas', []) != None and comodo.get('areas', []) != []:
+#                   for area in comodo.get('areas', []):
+#                     if area.get('nome') == selecao_area:
+#                       presenc_area = area.get("presenc")
+#                       mov_area = area.get("mov_area")
+#                       deitada = area.get("deitada")
+#                       sensor_mov = area.get("sensor_mov")
+#                 if comodo.get('obj', []) != None and comodo.get('obj', []) != []:
+#                   for obj in comodo.get('obj', []):
+#                     if obj.get('label') == 'Colaborador':
+#                       colaborador = 1
+#                     else:
+#                       colaborador = 0
+#                 else:
+#                   colaborador = 0
+#     try:
+#       return {
+#               "people": people,
+#               "mov": mov,
+#               "veloc": veloc,
+#               "queda": queda,
+#               "alarme_id": alarme_id,
+#               "presenc_area": presenc_area,
+#               "mov_area": mov_area,
+#               "deitada": deitada,
+#               "sensor_mov": sensor_mov,
+#               "colaborador": colaborador
+#             }
+#     except:
+#       return {
+#               "people": people,
+#               "mov": mov,
+#               "veloc": veloc,
+#               "queda": queda,
+#               "alarme_id": alarme_id
+#             }
+#   except json.JSONDecodeError as e:
+#     print(f"Erro ao decodificar JSON: {e}")
+#   # return {"people": None, "mov": None, "queda": None}
 
 
 # Função para extrair os dados do JSON
 def extrair_dados(json_str):
-    try:
-        dados = json.loads(json_str)
-        for item in dados:
-            if item.get('Franquia') == selecao_franquia:
-              for residente in item.get('Residentes', []):
-                if residente.get('Residente') == selecao_residente:
-                  for comodo in residente.get('comodos', []):
-                    if comodo.get('comodo') == selecao_comodo:
-                      people = comodo.get('people')
-                      mov = comodo.get('mov')
-                      veloc = comodo.get('veloc')
-                      queda = comodo.get('queda')
-                      alarme_id = comodo.get('alarme_id')
-                      if comodo.get('areas', []) != None and comodo.get('areas', []) != []:
-                        for area in comodo.get('areas', []):
-                          if area.get('nome') == selecao_area:
-                            presenc_area = area.get("presenc")
-                            mov_area = area.get("mov_area")
-                            deitada = area.get("deitada")
-                            sensor_mov = area.get("sensor_mov")
-                      if comodo.get('obj', []) != None and comodo.get('obj', []) != []:
-                        for obj in comodo.get('obj', []):
-                          if obj.get('label') == 'Colaborador':
-                            colaborador = 1
-                          else:
-                            colaborador = 0
-                      else:
-                        colaborador = 0
-        try:
-          return {
-                  "people": people,
-                  "mov": mov,
-                  "veloc": veloc,
-                  "queda": queda,
-                  "alarme_id": alarme_id,
-                  "presenc_area": presenc_area,
-                  "mov_area": mov_area,
-                  "deitada": deitada,
-                  "sensor_mov": sensor_mov,
-                  "colaborador": colaborador
-                }
-        except:
-          return {
-                  "people": people,
-                  "mov": mov,
-                  "veloc": veloc,
-                  "queda": queda,
-                  "alarme_id": alarme_id
-                }
-          
+  dados = json.loads(json_str)
+  for item in dados:
+    if item.get('codId') == codId_franquia[0]:
+      for residente in item.get('Residentes', []):
+        if residente.get('codId') == codId_residente[0]:
+          for comodo in residente.get('comodos', []):
+            if comodo.get('deviceId') == codId_comodo[0]:
+              people = comodo.get('people')
+              mov = comodo.get('mov')
+              veloc = comodo.get('veloc')
+              queda = comodo.get('queda')
+              alarme_id = comodo.get('alarme_id')
+              if comodo.get('areas', []) != None and comodo.get('areas', []) != []:
+                for area in comodo.get('areas', []):
+                  if area.get('nome') == selecao_area:
+                    presenc_area = area.get("presenc")
+                    mov_area = area.get("mov_area")
+                    deitada = area.get("deitada")
+                    sensor_mov = area.get("sensor_mov")
+              if comodo.get('obj', []) != None and comodo.get('obj', []) != []:
+                for obj in comodo.get('obj', []):
+                  if obj.get('label') == 'Colaborador':
+                    colaborador = 1
+                  else:
+                    colaborador = 0
+                  if obj.get('label') == 'Pessoa':
+                    pessoa = 1
+                  else:
+                    pessoa = 0
+              else:
+                colaborador = 0
+                pessoa = 0
 
-    except json.JSONDecodeError as e:
-      print(f"Erro ao decodificar JSON: {e}")
-    # return {"people": None, "mov": None, "queda": None}
+  try:
+    return {
+            "people": people,
+            "mov": mov,
+            "veloc": veloc,
+            "queda": queda,
+            "alarme_id": alarme_id,
+            "presenc_area": presenc_area,
+            "mov_area": mov_area,
+            "deitada": deitada,
+            "sensor_mov": sensor_mov,
+            "colaborador": colaborador
+          }
+  except:
+     st.write('Deu erro')
+    #  st.write(item)
 
 
 def gera_grafico(df_extracted):
@@ -140,13 +192,27 @@ def gera_grafico(df_extracted):
         fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['deitada'], name='Deitada'))
         fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['sensor_mov'], name='Sensor Movimento'))
         fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['colaborador'], name='Colaborador'))
+        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['pessoa'], name='Pessoa'))
+        # fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['sensor_mov'], name='Sensor Movimento', yaxis='y2'))
     except:
         fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['people'], name='Presença'))
         fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['mov'], name='Movimento'))
         fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['queda'], name='Queda'))
         fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['alarme_id'], name='alarme_id'))
 
-    fig.update_layout(title='Graficos')
+    # Configuração do layout com dois eixos Y
+    fig.update_layout(
+        title='Gráficos',
+        xaxis_title='Horário',
+        yaxis_title='Dados',
+        yaxis2=dict(
+            title='Sensor Movimento (Escala Ajustada)',
+            overlaying='y',
+            side='right',
+            showgrid=False  # Evita duplicação das linhas da grade
+        ),
+        # legend=dict(x=0.5, y=1.2, orientation='h'),
+    )
 
     st.plotly_chart(fig)
 
@@ -157,17 +223,32 @@ data_api = response.json()
 
 with st.expander('Seleciona o Cliente:', expanded=True):
     col1, col2, col3, col4 = st.columns(4)
+
+    # Franquia
     franquias = [record.get("Franquia") for record in data_api]
     selecao_franquia = col1.selectbox("Franquia", franquias)
-    dados_residentes_franquia = [record.get("Residentes") for record in data_api if record.get("Franquia") == selecao_franquia]
+    codId_franquia = [record.get("codId") for record in data_api if record.get("Franquia") == selecao_franquia]
+    dados_residentes_franquia = [record.get("Residentes") for record in data_api if record.get("codId") == codId_franquia[0]]
+
+    # Residente
     residentes_franquia = [record.get("Residente") for record in dados_residentes_franquia[0]]
     selecao_residente = col2.selectbox('Residente', residentes_franquia, key='residente')
-    dados_residente = [record for record in dados_residentes_franquia[0] if record.get("Residente") == selecao_residente]
+    codId_residente = [record.get("codId") for record in dados_residentes_franquia[0] if record.get("Residente") == selecao_residente]
+    dados_residente = [record for record in dados_residentes_franquia[0] if record.get("codId") == codId_residente[0]]
+
+    # Comodo / Device
     comodos_residente = [record.get("comodo") for record in dados_residente[0]['comodos']]
     selecao_comodo = col3.selectbox('Cômodo', comodos_residente, key='comodo')
-    dados_comodo = [record for record in dados_residente[0]['comodos'] if record.get("comodo") == selecao_comodo]
+    codId_comodo = [record.get("deviceId") for record in dados_residente[0]['comodos'] if record.get("comodo") == selecao_comodo]
+    dados_comodo = [record for record in dados_residente[0]['comodos'] if record.get("deviceId") == codId_comodo[0]]
+
+    # Área
     areas_comodo = [record.get("nome") for record in dados_comodo[0]['areas']]
     selecao_area = col4.selectbox('Área', areas_comodo, key='area')
+    if selecao_area !=None:
+      codId_area = [record.get("id") for record in dados_comodo[0]['areas'] if record.get("nome") == selecao_area]
+    else:
+      codId_area = [0]
 
 with st.form('Data input'):
     col1, col2 = st.columns(2)
@@ -184,6 +265,8 @@ with st.form('Data input'):
 
         data_inicio = str(date1)
         data_fim = str(date1 + timedelta(days=1))
+
+
 
         # Marca o tempo inicial
         start_time = time.time()
@@ -204,7 +287,7 @@ with st.form('Data input'):
         st.write('Tempo de execução: ', execution_time, ' segundos')
 
 
-        #############################################3
+        #############################################
 
         coluna = 'presenc_area'
         
