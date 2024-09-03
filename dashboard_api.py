@@ -72,62 +72,6 @@ def coleta_banco(data_inicio, data_fim):
 
     return df
 
-# # Função para extrair os dados do JSON
-# def extrair_dados(json_str):
-#   try:
-#     dados = json.loads(json_str)
-#     for item in dados:
-#       if item.get('codId') == codId_franquia:
-#         for residente in item.get('Residentes', []):
-#           if residente.get('codId') == codId_residente:
-#             for comodo in residente.get('comodos', []):
-#               if comodo.get('deviceId') == codId_comodo:
-#                 people = comodo.get('people')
-#                 mov = comodo.get('mov')
-#                 veloc = comodo.get('veloc')
-#                 queda = comodo.get('queda')
-#                 alarme_id = comodo.get('alarme_id')
-#                 if comodo.get('areas', []) != None and comodo.get('areas', []) != []:
-#                   for area in comodo.get('areas', []):
-#                     if area.get('nome') == selecao_area:
-#                       presenc_area = area.get("presenc")
-#                       mov_area = area.get("mov_area")
-#                       deitada = area.get("deitada")
-#                       sensor_mov = area.get("sensor_mov")
-#                 if comodo.get('obj', []) != None and comodo.get('obj', []) != []:
-#                   for obj in comodo.get('obj', []):
-#                     if obj.get('label') == 'Colaborador':
-#                       colaborador = 1
-#                     else:
-#                       colaborador = 0
-#                 else:
-#                   colaborador = 0
-#     try:
-#       return {
-#               "people": people,
-#               "mov": mov,
-#               "veloc": veloc,
-#               "queda": queda,
-#               "alarme_id": alarme_id,
-#               "presenc_area": presenc_area,
-#               "mov_area": mov_area,
-#               "deitada": deitada,
-#               "sensor_mov": sensor_mov,
-#               "colaborador": colaborador
-#             }
-#     except:
-#       return {
-#               "people": people,
-#               "mov": mov,
-#               "veloc": veloc,
-#               "queda": queda,
-#               "alarme_id": alarme_id
-#             }
-#   except json.JSONDecodeError as e:
-#     print(f"Erro ao decodificar JSON: {e}")
-#   # return {"people": None, "mov": None, "queda": None}
-
-
 # Função para extrair os dados do JSON
 def extrair_dados(json_str):
   dados = json.loads(json_str)
@@ -190,31 +134,21 @@ def extrair_dados(json_str):
 
 
 def gera_grafico(df_extracted):
+    if 'mov_area' in df_extracted.columns:
+      df_grafico= df_extracted.drop(columns=['veloc', 'mov_area'])
+    else:
+      df_grafico = df_extracted.copy()
     fig = go.Figure()
-    try:
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['people'], name='Presença'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['mov'], name='Movimento'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['queda'], name='Queda'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['queda_raw'], name='Queda Raw'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['alarme_id'], name='alarme_id'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['presenc_area'], name='Presença Area'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['mov_area'], name='Movimento Area'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['deitada'], name='Deitada'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['sensor_mov'], name='Sensor Movimento'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['colaborador'], name='Colaborador'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['pessoa'], name='Pessoa'))
-        # fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['sensor_mov'], name='Sensor Movimento', yaxis='y2'))
-    except:
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['people'], name='Presença'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['mov'], name='Movimento'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['queda'], name='Queda'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['queda_raw'], name='Queda Raw'))
-        fig.add_trace(go.Scatter(x=df_extracted.timestamp, y=df_extracted['alarme_id'], name='alarme_id'))
+    for coluna in df_grafico.columns:
+      if coluna != 'timestamp' and coluna != 'sensor_mov':
+        fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico[coluna], name=coluna))
+    if 'sensor_mov' in df_grafico.columns:
+      fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['sensor_mov'], name='Sensor Movimento', yaxis='y2'))
 
     # Configuração do layout com dois eixos Y
     fig.update_layout(
-        title='Gráficos',
-        xaxis_title='Horário',
+        title='Dados',
+        xaxis_title='Timestamp',
         yaxis_title='Dados',
         yaxis2=dict(
             title='Sensor Movimento (Escala Ajustada)',
@@ -222,10 +156,158 @@ def gera_grafico(df_extracted):
             side='right',
             showgrid=False  # Evita duplicação das linhas da grade
         ),
-        # legend=dict(x=0.5, y=1.2, orientation='h'),
+        legend=dict(x=0.5, y=1.2, orientation='h'),
     )
-
     st.plotly_chart(fig)
+
+def grafico_gantt(df_extracted):
+
+  if 'mov_area' in df_extracted.columns:
+    df_tratado= df_extracted.drop(columns=['veloc', 'mov_area'])
+  else:
+    df_tratado = df_extracted.copy()
+
+  for coluna in df_tratado.columns:
+    if coluna != 'timestamp':
+
+      # Identificar os períodos de ausência (presenca_comodo == 0)
+      df_tratado['absence'] = (df_tratado[coluna] == 0).astype(int)
+
+      # Calcular a duração de cada período de ausência
+      df_tratado['absence_block'] = (df_tratado['absence'].diff(1) != 0).cumsum()
+      absence_durations = df_tratado[df_tratado['absence'] == 1].groupby('absence_block')['timestamp'].agg(['min', 'max'])
+      absence_durations['duration'] = absence_durations['max'] - absence_durations['min']
+
+      # Filtrar apenas as ausências que duram mais de X minutos
+      long_absences = absence_durations[absence_durations['duration'] > pd.Timedelta(minutes=10)]
+
+      # Criar uma máscara para identificar quais períodos de ausência são longos
+      long_absence_blocks = long_absences.index.tolist()
+      df_tratado['valid_absence'] = df_tratado['absence_block'].isin(long_absence_blocks)
+
+      # Atualizar a coluna de presença para desconsiderar ausências curtas (substituir por 1)
+      df_tratado.loc[(df_tratado['absence'] == 1) & (~df_tratado['valid_absence']), coluna] = 1
+
+      # Remover colunas auxiliares
+      df_tratado = df_tratado.drop(columns=['absence', 'absence_block', 'valid_absence'])
+  # Criar dataframe dos blocos
+
+  presence_blocks = pd.DataFrame(columns=['block','Start', 'End', 'Evento'])
+
+  for coluna in df_tratado.columns:
+    if coluna != 'timestamp':
+
+      # Filtrar os períodos de presença (presenca_comodo == 1)
+      df_presence = df_tratado[df_tratado[coluna] == 1].copy()
+
+      # Agrupar os dados para criar blocos contínuos de tempo
+      df_presence['block'] = (df_presence['timestamp'].diff() > pd.Timedelta(minutes=10)).cumsum()
+
+      # Encontrar início e fim de cada bloco
+      presence_blocks_temp = df_presence.groupby(['block']).agg(
+          Start=('timestamp', 'min'),
+          End=('timestamp', 'max')
+      ).reset_index()
+      presence_blocks_temp['Evento'] = coluna
+      presence_blocks = pd.concat([presence_blocks, presence_blocks_temp], ignore_index=True)
+
+  # Dividir os Blocos que passam de um dia para o outro
+
+  presence_blocks_split = presence_blocks.copy()
+
+  # Função para dividir os períodos que ultrapassam a meia-noite
+  def split_overnight_blocks(row):
+      # start_time = datetime.strptime(row['Start'], '%Y-%m-%d %H:%M:%S')
+      # end_time = datetime.strptime(row['End'], '%Y-%m-%d %H:%M:%S')
+
+      start_time = row['Start']
+      end_time = row['End']
+
+      # Se o período não cruza a meia-noite, retorna o mesmo período
+      if start_time.date() == end_time.date():
+          return pd.DataFrame([row])
+
+      # Se cruza a meia-noite, cria dois períodos
+      else:
+          # Primeiro período, até 23:59:59 do mesmo dia
+          end_of_day = datetime.combine(start_time.date(), datetime.max.time())
+          first_period = row.copy()
+          first_period['End'] = end_of_day.strftime('%Y-%m-%d %H:%M:%S')
+
+          # Segundo período, a partir de 00:00:00 do dia seguinte
+          start_of_next_day = end_of_day + timedelta(seconds=1)
+          second_period = row.copy()
+          second_period['Start'] = start_of_next_day.strftime('%Y-%m-%d %H:%M:%S')
+
+          return pd.DataFrame([first_period, second_period])
+
+  # Aplicar a função e concatenar os resultados corretamente
+  df_split = pd.concat(presence_blocks_split.apply(split_overnight_blocks, axis=1).tolist(), ignore_index=True)
+
+  # Converter novamente colunas start e end para datetime
+  df_split['Start'] = pd.to_datetime(df_split['Start'])
+  df_split['End'] = pd.to_datetime(df_split['End'])
+
+  # Calcular a duração de cada evento
+  df_split['Duration'] = (df_split['End'] - df_split['Start']).dt.total_seconds()
+
+  # Eliminar eventos com menos de X segundos
+  df_split = df_split[df_split['Duration'] > 20]
+
+  # Atualizando a coluna 'block' para ter uma sequência contínua
+  df_split['block'] = range(len(df_split))
+
+
+  # Extrair a hora do dia e o dia da semana para plotagem
+  df_split['start_hour'] = df_split['Start'].dt.hour + df_split['Start'].dt.minute / 60
+  df_split['end_hour'] = df_split['End'].dt.hour + df_split['End'].dt.minute / 60
+  df_split['day_of_week'] = df_split['Start'].dt.day_name()
+
+  # Mapeamento dos dias da semana em português
+  day_translation = {
+      'Monday': 'Seg',
+      'Tuesday': 'Ter',
+      'Wednesday': 'Qua',
+      'Thursday': 'Qui',
+      'Friday': 'Sex',
+      'Saturday': 'Sab',
+      'Sunday': 'Dom'
+  }
+  df_split['day_of_week'] = df_split['day_of_week'].map(day_translation)
+  
+  # Gerar grafico de Gantt
+  df = df_split.copy()
+
+  # Definindo a nova fake que será usada
+  nova_data = "2024-08-01"
+
+  # Ajustando as colunas Start e End para a nova data, mantendo os horários
+  df['Start'] = df['Start'].apply(lambda x: pd.to_datetime(nova_data + ' ' + x.strftime('%H:%M:%S')))
+  df['End'] = df['End'].apply(lambda x: pd.to_datetime(nova_data + ' ' + x.strftime('%H:%M:%S')))
+
+
+  # Criando o gráfico de Gantt
+  fig = px.timeline(df, x_start="Start", x_end="End", y="day_of_week", color="Evento",
+                    title=f"Atividade ao Longo do Dia",
+                    category_orders={"Evento": ["colaborador", "queda_comodo"]},
+                    labels={"day_of_week": "Dia da Semana"})
+
+  # Formatando o eixo X para mostrar horas
+  fig.update_layout(
+      xaxis_title="Horário do Dia",
+      xaxis=dict(type='date', tickformat='%H:%M:%S'),
+      # width=1000,
+      # height=700
+      )
+
+  fig.update_yaxes(categoryorder="array", categoryarray= ["Dom", "Sab", "Sex", "Qui", "Qua", "Ter", "Seg"])
+
+  # Ajustando a opacidade das barras para permitir visualização sobreposta
+  fig.update_traces(opacity=0.6)  # A opacidade pode variar de 0 (totalmente transparente) a 1 (opaco)
+
+  st.plotly_chart(fig)
+
+
 
 
 url = 'http://app.anglis.com.br:8081/monit'
@@ -267,17 +349,9 @@ with st.form('Data input'):
     # date2 = col2.date_input('Selecione data 2', format="DD/MM/YYYY")
 
     if st.form_submit_button('Submit'):
-        # st.write(selecao_franquia)
-        # st.write(selecao_residente)
-        # st.write(selecao_comodo)
-        # st.write(selecao_area)
-        # st.write(date1)
-        # st.write(date1 + timedelta(days=1))
 
         data_inicio = str(date1)
         data_fim = str(date1 + timedelta(days=1))
-
-
 
         # Marca o tempo inicial
         start_time = time.time()
@@ -290,157 +364,159 @@ with st.form('Data input'):
         df_extracted['timestamp'] = df_bruto['timestamp'].apply(convert_timestamp)
         df_extracted['timestamp'] = pd.to_datetime(df_extracted['timestamp'], format='%d-%m-%Y %H:%M:%S')
         df_extracted = df_extracted.fillna(0)
-        st.write(df_extracted)
         gera_grafico(df_extracted)
         # Marca o tempo final
         end_time = time.time()
         execution_time = end_time - start_time
         st.write('Tempo de execução: ', execution_time, ' segundos')
+        grafico_gantt(df_extracted)
+        st.write('Dataframe Raw')
+        st.write(df_extracted)
 
 
         #############################################
 
-        try:
-          coluna = 'presenc_area'
+        # try:
+        #   coluna = 'presenc_area'
           
-          # Considerar 0 apenas com periodos de 0 acima de X minutos (Cama por exemplo)
+        #   # Considerar 0 apenas com periodos de 0 acima de X minutos (Cama por exemplo)
 
-          df_tratado = df_extracted.copy()
+        #   df_tratado = df_extracted.copy()
 
-          # Converter a coluna 'timestamp' para datetime
-          df_tratado['timestamp'] = pd.to_datetime(df_tratado['timestamp'])
+        #   # Converter a coluna 'timestamp' para datetime
+        #   df_tratado['timestamp'] = pd.to_datetime(df_tratado['timestamp'])
 
-          # Ordenar os dados por timestamp para garantir a sequência correta
-          df_tratado = df_tratado.sort_values('timestamp').reset_index(drop=True)
+        #   # Ordenar os dados por timestamp para garantir a sequência correta
+        #   df_tratado = df_tratado.sort_values('timestamp').reset_index(drop=True)
 
-          # Identificar os períodos de ausência (presenca_comodo == 0)
-          df_tratado['absence'] = (df_tratado[coluna] == 0).astype(int)
+        #   # Identificar os períodos de ausência (presenca_comodo == 0)
+        #   df_tratado['absence'] = (df_tratado[coluna] == 0).astype(int)
 
-          # Calcular a duração de cada período de ausência
-          df_tratado['absence_block'] = (df_tratado['absence'].diff(1) != 0).cumsum()
-          absence_durations = df_tratado[df_tratado['absence'] == 1].groupby('absence_block')['timestamp'].agg(['min', 'max'])
-          absence_durations['duration'] = absence_durations['max'] - absence_durations['min']
+        #   # Calcular a duração de cada período de ausência
+        #   df_tratado['absence_block'] = (df_tratado['absence'].diff(1) != 0).cumsum()
+        #   absence_durations = df_tratado[df_tratado['absence'] == 1].groupby('absence_block')['timestamp'].agg(['min', 'max'])
+        #   absence_durations['duration'] = absence_durations['max'] - absence_durations['min']
 
-          # Filtrar apenas as ausências que duram mais de 5 minutos
-          long_absences = absence_durations[absence_durations['duration'] > pd.Timedelta(minutes=10)]
+        #   # Filtrar apenas as ausências que duram mais de 5 minutos
+        #   long_absences = absence_durations[absence_durations['duration'] > pd.Timedelta(minutes=10)]
 
-          # Criar uma máscara para identificar quais períodos de ausência são longos
-          long_absence_blocks = long_absences.index.tolist()
-          df_tratado['valid_absence'] = df_tratado['absence_block'].isin(long_absence_blocks)
+        #   # Criar uma máscara para identificar quais períodos de ausência são longos
+        #   long_absence_blocks = long_absences.index.tolist()
+        #   df_tratado['valid_absence'] = df_tratado['absence_block'].isin(long_absence_blocks)
 
-          # Atualizar a coluna de presença para desconsiderar ausências curtas (substituir por 1)
-          df_tratado.loc[(df_tratado['absence'] == 1) & (~df_tratado['valid_absence']), coluna] = 1
+        #   # Atualizar a coluna de presença para desconsiderar ausências curtas (substituir por 1)
+        #   df_tratado.loc[(df_tratado['absence'] == 1) & (~df_tratado['valid_absence']), coluna] = 1
 
-          # Remover colunas auxiliares
-          df_tratado = df_tratado.drop(columns=['absence', 'absence_block', 'valid_absence'])
-
-
-          # Criar dataframe dos blocos
-
-          # Filtrar os períodos de presença (presenca_comodo == 1)
-          df_presence = df_tratado[df_tratado[coluna] == 1].copy()
-
-          # Agrupar os dados para criar blocos contínuos de tempo
-          df_presence['block'] = (df_presence['timestamp'].diff() > pd.Timedelta(minutes=10)).cumsum()
-
-          # Encontrar início e fim de cada bloco
-          presence_blocks = df_presence.groupby(['block']).agg(
-              Start=('timestamp', 'min'),
-              End=('timestamp', 'max')
-          ).reset_index()
-
-          # Extrair a hora do dia e o dia da semana para plotagem
-          presence_blocks['start_hour'] = presence_blocks['Start'].dt.hour + presence_blocks['Start'].dt.minute / 60
-          presence_blocks['end_hour'] = presence_blocks['End'].dt.hour + presence_blocks['End'].dt.minute / 60
-          presence_blocks['day_of_week'] = presence_blocks['Start'].dt.day_name()
-
-          # Mapeamento dos dias da semana em português
-          day_translation = {
-              'Monday': 'Seg',
-              'Tuesday': 'Ter',
-              'Wednesday': 'Qua',
-              'Thursday': 'Qui',
-              'Friday': 'Sex',
-              'Saturday': 'Sab',
-              'Sunday': 'Dom'
-          }
-          presence_blocks['day_of_week'] = presence_blocks['day_of_week'].map(day_translation)
-
-          df = presence_blocks.copy()
-
-          # Converter colunas Start e End para datetime
-          df['Start'] = pd.to_datetime(df['Start'])
-          df['End'] = pd.to_datetime(df['End'])
-
-          # Criar uma data fictícia base (por exemplo, 2024-01-01) para usar com horários
-          df['Start_time'] = pd.to_datetime('2024-01-01 ' + df['Start'].dt.strftime('%H:%M:%S'))
-          df['End_time'] = pd.to_datetime('2024-01-01 ' + df['End'].dt.strftime('%H:%M:%S'))
-
-          # Plotar o gráfico de Gantt usando o Plotly
-          fig = px.timeline(df, x_start="Start_time", x_end="End_time", y="day_of_week", color="day_of_week")
-
-          # Customizar o gráfico
-          fig.update_traces(marker_color='skyblue')  # Define uma cor fixa para todas as barras
-          fig.update_traces(opacity=1)  # Define a opacidade das barras
+        #   # Remover colunas auxiliares
+        #   df_tratado = df_tratado.drop(columns=['absence', 'absence_block', 'valid_absence'])
 
 
-          # Customizar o gráfico
-          fig.update_layout(
-              xaxis=dict(
-                  tickformat="%H:%M",
-                  range=[pd.to_datetime('2024-01-01 00:00:00'), pd.to_datetime('2024-01-01 23:59:59')]
-              ),
-              xaxis_title="Horário do Dia",
-              yaxis_title="Dia da Semana",
-              title="Presença Cama",
-              height=400,
-              showlegend=False
-          )
+        #   # Criar dataframe dos blocos
 
-          # Adicionar linhas horizontais para separar os dias
-          days = df['day_of_week'].unique()
-          for day in days:
-              fig.add_shape(
-                  type="line",
-                  x0=df['Start_time'].min(), x1=df['End_time'].max(),
-                  y0=day, y1=day,
-                  line=dict(color="Gray", width=0.5, dash="dot")
-              )
+        #   # Filtrar os períodos de presença (presenca_comodo == 1)
+        #   df_presence = df_tratado[df_tratado[coluna] == 1].copy()
+
+        #   # Agrupar os dados para criar blocos contínuos de tempo
+        #   df_presence['block'] = (df_presence['timestamp'].diff() > pd.Timedelta(minutes=10)).cumsum()
+
+        #   # Encontrar início e fim de cada bloco
+        #   presence_blocks = df_presence.groupby(['block']).agg(
+        #       Start=('timestamp', 'min'),
+        #       End=('timestamp', 'max')
+        #   ).reset_index()
+
+        #   # Extrair a hora do dia e o dia da semana para plotagem
+        #   presence_blocks['start_hour'] = presence_blocks['Start'].dt.hour + presence_blocks['Start'].dt.minute / 60
+        #   presence_blocks['end_hour'] = presence_blocks['End'].dt.hour + presence_blocks['End'].dt.minute / 60
+        #   presence_blocks['day_of_week'] = presence_blocks['Start'].dt.day_name()
+
+        #   # Mapeamento dos dias da semana em português
+        #   day_translation = {
+        #       'Monday': 'Seg',
+        #       'Tuesday': 'Ter',
+        #       'Wednesday': 'Qua',
+        #       'Thursday': 'Qui',
+        #       'Friday': 'Sex',
+        #       'Saturday': 'Sab',
+        #       'Sunday': 'Dom'
+        #   }
+        #   presence_blocks['day_of_week'] = presence_blocks['day_of_week'].map(day_translation)
+
+        #   df = presence_blocks.copy()
+
+        #   # Converter colunas Start e End para datetime
+        #   df['Start'] = pd.to_datetime(df['Start'])
+        #   df['End'] = pd.to_datetime(df['End'])
+
+        #   # Criar uma data fictícia base (por exemplo, 2024-01-01) para usar com horários
+        #   df['Start_time'] = pd.to_datetime('2024-01-01 ' + df['Start'].dt.strftime('%H:%M:%S'))
+        #   df['End_time'] = pd.to_datetime('2024-01-01 ' + df['End'].dt.strftime('%H:%M:%S'))
+
+        #   # Plotar o gráfico de Gantt usando o Plotly
+        #   fig = px.timeline(df, x_start="Start_time", x_end="End_time", y="day_of_week", color="day_of_week")
+
+        #   # Customizar o gráfico
+        #   fig.update_traces(marker_color='skyblue')  # Define uma cor fixa para todas as barras
+        #   fig.update_traces(opacity=1)  # Define a opacidade das barras
 
 
-          # Exibir o gráfico
-          st.plotly_chart(fig)
+        #   # Customizar o gráfico
+        #   fig.update_layout(
+        #       xaxis=dict(
+        #           tickformat="%H:%M",
+        #           range=[pd.to_datetime('2024-01-01 00:00:00'), pd.to_datetime('2024-01-01 23:59:59')]
+        #       ),
+        #       xaxis_title="Horário do Dia",
+        #       yaxis_title="Dia da Semana",
+        #       title="Presença Cama",
+        #       height=400,
+        #       showlegend=False
+        #   )
 
-          df = presence_blocks.copy()
+        #   # Adicionar linhas horizontais para separar os dias
+        #   days = df['day_of_week'].unique()
+        #   for day in days:
+        #       fig.add_shape(
+        #           type="line",
+        #           x0=df['Start_time'].min(), x1=df['End_time'].max(),
+        #           y0=day, y1=day,
+        #           line=dict(color="Gray", width=0.5, dash="dot")
+        #       )
 
-          # Converter colunas Start e End para datetime
-          df['Start'] = pd.to_datetime(df['Start'])
-          df['End'] = pd.to_datetime(df['End'])
 
-          # Calcular a duração de cada visita
-          df['Duration'] = (df['End'] - df['Start']).dt.total_seconds()
+        #   # Exibir o gráfico
+        #   st.plotly_chart(fig)
 
-          # Calcular o número de visitas
-          num_visits = len(df)
+        #   df = presence_blocks.copy()
 
-          # Calcular o maior e menor período de presença
-          longest_visit = df['Duration'].max()
-          shortest_visit = df['Duration'].min()
+        #   # Converter colunas Start e End para datetime
+        #   df['Start'] = pd.to_datetime(df['Start'])
+        #   df['End'] = pd.to_datetime(df['End'])
 
-          # Calcular a média de tempo por visita
-          average_visit = df['Duration'].mean()
+        #   # Calcular a duração de cada visita
+        #   df['Duration'] = (df['End'] - df['Start']).dt.total_seconds()
 
-          # Converter os períodos de segundos para uma forma mais legível (horas, minutos, segundos)
-          import datetime
+        #   # Calcular o número de visitas
+        #   num_visits = len(df)
 
-          longest_visit_str = str(datetime.timedelta(seconds=int(longest_visit)))
-          shortest_visit_str = str(datetime.timedelta(seconds=int(shortest_visit)))
-          average_visit_str = str(datetime.timedelta(seconds=int(average_visit)))
+        #   # Calcular o maior e menor período de presença
+        #   longest_visit = df['Duration'].max()
+        #   shortest_visit = df['Duration'].min()
 
-          st.write(f"Estatísticas de Resumo:")
-          st.write(f"Número de Vezes: {num_visits}")
-          st.write(f"Maior Período de Presença: {longest_visit_str}")
-          st.write(f"Menor Período de Presença: {shortest_visit_str}")
-          st.write(f"Média de Tempo: {average_visit_str}")
-        except:
-           st.write('Não tem grafico de presença ainda')
+        #   # Calcular a média de tempo por visita
+        #   average_visit = df['Duration'].mean()
+
+        #   # Converter os períodos de segundos para uma forma mais legível (horas, minutos, segundos)
+        #   import datetime
+
+        #   longest_visit_str = str(datetime.timedelta(seconds=int(longest_visit)))
+        #   shortest_visit_str = str(datetime.timedelta(seconds=int(shortest_visit)))
+        #   average_visit_str = str(datetime.timedelta(seconds=int(average_visit)))
+
+        #   st.write(f"Estatísticas de Resumo:")
+        #   st.write(f"Número de Vezes: {num_visits}")
+        #   st.write(f"Maior Período de Presença: {longest_visit_str}")
+        #   st.write(f"Menor Período de Presença: {shortest_visit_str}")
+        #   st.write(f"Média de Tempo: {average_visit_str}")
+        # except:
+        #    st.write('Não tem grafico de presença ainda')
