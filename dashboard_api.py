@@ -120,7 +120,8 @@ def extrair_dados(json_str):
             "mov_area": mov_area,
             "deitada": deitada,
             "sensor_mov": sensor_mov,
-            "colaborador": colaborador
+            "colaborador": colaborador,
+            "pessoa": pessoa
           }
   except:
     return {
@@ -365,13 +366,13 @@ with st.form('Data input'):
         df_extracted['timestamp'] = pd.to_datetime(df_extracted['timestamp'], format='%d-%m-%Y %H:%M:%S')
         df_extracted = df_extracted.fillna(0)
         gera_grafico(df_extracted)
+        grafico_gantt(df_extracted)
+        st.write('Dataframe Raw')
+        st.write(df_extracted)
         # Marca o tempo final
         end_time = time.time()
         execution_time = end_time - start_time
         st.write('Tempo de execução: ', execution_time, ' segundos')
-        grafico_gantt(df_extracted)
-        st.write('Dataframe Raw')
-        st.write(df_extracted)
 
 
         #############################################
