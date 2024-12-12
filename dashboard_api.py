@@ -547,7 +547,8 @@ if st.sidebar.button('Baixar Dados'):
     df_tabelao_filtro = df_tabelao[(df_tabelao['deviceId'] == codId_comodo[0]) & (df_tabelao['area'] ==  selecao_area)]
     df_blocos_filtro = df_blocos[(df_blocos['codId_residente'] == codId_residente[0]) & (df_blocos['local'] == selecao_comodo) & (df_blocos['area'] == selecao_area)]
     df_acoes = coleta_acoes(df_tabelao_filtro)
-    
+
+st.sidebar.info('Versão: 4.0')    
 
 tab1, tab2, tab3, tab4 = st.tabs(['Gráficos', 'Dados', 'Ações', 'Json API'])
 
