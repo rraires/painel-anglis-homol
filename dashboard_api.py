@@ -75,7 +75,8 @@ def tabelao(json_str, codId_franquia):
     presenca_enfermeiros = 0
     qtde_enfermeiros = 0
     poses_llm=[]
-    acao_enfermeiro = []
+    acao_enfermeiro = ""
+    classificacao_acao = ""
     queda_conf = 0
     presenca_cama = {}
 
@@ -97,7 +98,7 @@ def tabelao(json_str, codId_franquia):
                         device = comodo.get('comodo')
                         local = comodo.get('local')
                         people = comodo.get('people')
-                        mov = comodo.get('mov')
+                        # mov = comodo.get('mov')
                         queda = comodo.get('queda')
                         if "queda_conf" in comodo:
                             queda_conf = comodo.get('queda_conf')
@@ -126,6 +127,8 @@ def tabelao(json_str, codId_franquia):
                                 qtde_enfermeiros = llm["quantidade_enfermeiros_cuidadores"]
                                 poses_llm = llm["poses"]
                                 acao_enfermeiro = llm["acao_enfermeiros_cuidadores"]
+                                if 'classificacao_acao' in llm:
+                                    classificacao_acao = llm["classificacao_acao"]
                                 if "presenca_cama" in llm:
                                     presenca_cama = llm["presenca_cama"]
                             else:
@@ -134,7 +137,8 @@ def tabelao(json_str, codId_franquia):
                                 presenca_enfermeiros = 0
                                 qtde_enfermeiros = 0
                                 poses_llm=[]
-                                acao_enfermeiro = []
+                                acao_enfermeiro = ""
+                                classificacao_acao = ""
                                 presenca_cama = {}
                                 queda_conf = 0
 
@@ -149,7 +153,7 @@ def tabelao(json_str, codId_franquia):
                                 "local": local,
                                 "area": 'comodo',
                                 "people": people,
-                                "mov": mov,
+                                # "mov": mov,
                                 "queda": queda,
                                 "queda_conf": queda_conf,
                                 "colaborador": colaborador,
@@ -163,6 +167,7 @@ def tabelao(json_str, codId_franquia):
                                 "qtde_enfermeiros": qtde_enfermeiros,
                                 "poses_llm": poses_llm,
                                 "acao_enfermeiro": acao_enfermeiro,
+                                "classificacao_acao": classificacao_acao,
                                 "presenca_cama": presenca_cama,
                             }
                         lista_dataframe.append(resultado)
@@ -204,7 +209,7 @@ def tabelao(json_str, codId_franquia):
                                         "local": local,
                                         "area": nome_area,
                                         "people": 0,
-                                        "mov": 0,
+                                        # "mov": 0,
                                         "queda": 0,
                                         "queda_conf": 0,
                                         "colaborador": 0,
@@ -218,7 +223,8 @@ def tabelao(json_str, codId_franquia):
                                         "presenca_enfermeiros": 0,
                                         "qtde_enfermeiros": 0,
                                         "poses_llm": [],
-                                        "acao_enfermeiro": [],
+                                        "acao_enfermeiro": "",
+                                        "classificacao_acao": "",
                                         "presenca_cama": {},
                                         }
                                     lista_dataframe.append(resultado)
@@ -424,6 +430,42 @@ def coleta_acoes(df_filtro):
     actions_summary.rename(columns={'hour': 'Hora', 'acao_enfermeiro': 'Acoes'}, inplace=True)
     return actions_summary
 
+def coleta_acoes_classificadas(df_filtro):
+
+    #filtro
+    # df_filtro = df_extracted[(df_extracted['deviceId'] == filtro_deviceId) & (df_extracted['area'] == 'comodo')]
+
+    # Load the uploaded CSV file
+    # file_path = '/content/walter_captamed_02_12.csv'
+    # data = pd.read_csv(file_path)
+    data = df_filtro.copy().reset_index(drop=True)
+
+    # Convert 'timestamp' to datetime format for easier processing
+    data['timestamp'] = pd.to_datetime(data['timestamp'])
+
+    # Extract the hour for grouping
+    data['hour'] = data['timestamp'].dt.strftime('%Y-%m-%d %H:00')
+
+    # Filter relevant columns
+    actions_data = data[['hour', 'classificacao_acao']]
+
+    # Converter todos os valores para strings antes de aplicar as operações
+    actions_data['classificacao_acao'] = actions_data['classificacao_acao'].apply(lambda x: str(x) if not isinstance(x, str) else x)
+
+    # Group by hour and aggregate the actions
+    # Filtering out empty actions and summarizing text content
+    actions_summary = (
+        actions_data[actions_data['classificacao_acao'] != '[]']
+        .groupby('hour')['classificacao_acao']
+        .apply(lambda x: '. '.join(set(', '.join(x).replace('[', '').replace(']', '').split(', '))))
+        .reset_index()
+    )
+
+    # Format the summary to match the requested format
+    actions_summary['hour'] = pd.to_datetime(actions_summary['hour']).dt.strftime('%d/%m/%y %Hh')
+    actions_summary.rename(columns={'hour': 'Hora', 'classificacao_acao': 'Acoes'}, inplace=True)
+    return actions_summary
+
 
 def grafico_dados_brutos(df_extracted):
     df_grafico = df_extracted.copy()
@@ -547,6 +589,7 @@ if st.sidebar.button('Baixar Dados'):
     df_tabelao_filtro = df_tabelao[(df_tabelao['deviceId'] == codId_comodo[0]) & (df_tabelao['area'] ==  selecao_area)]
     df_blocos_filtro = df_blocos[(df_blocos['codId_residente'] == codId_residente[0]) & (df_blocos['local'] == selecao_comodo) & (df_blocos['area'] == selecao_area)]
     df_acoes = coleta_acoes(df_tabelao_filtro)
+    df_acoes_classificadas = coleta_acoes_classificadas(df_tabelao_filtro)
 
 if st.sidebar.button('Apagar Cache'):
     st.cache_data.clear()
@@ -576,6 +619,7 @@ with tab2:
 with tab3:
     try:
         st.dataframe(df_acoes, width=1500, height=600)
+        st.dataframe(df_acoes_classificadas, width=1500, height=600)
     except:
         st.write('Nada para mostrar')
 
