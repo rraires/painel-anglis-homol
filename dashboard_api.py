@@ -611,7 +611,7 @@ if st.sidebar.button('Baixar Dados'):
 if st.sidebar.button('Apagar Cache'):
     st.cache_data.clear()
 
-st.sidebar.info('Versão: 4.0')    
+st.sidebar.info('Versão: 4.0a')    
 
 tab1, tab2, tab3, tab4 = st.tabs(['Gráficos', 'Dados', 'Ações', 'Json API'])
 
