@@ -79,6 +79,8 @@ def tabelao(json_str, codId_franquia):
     classificacao_acao = ""
     queda_conf = 0
     presenca_cama = {}
+    presenca_residente = 0
+    residente_conf = 0
 
     #Coletar dados da raiz do Comodo
     for dados in json_str:
@@ -131,6 +133,14 @@ def tabelao(json_str, codId_franquia):
                                     classificacao_acao = llm["classificacao_acao"]
                                 if "presenca_cama" in llm:
                                     presenca_cama = llm["presenca_cama"]
+                                if llm.get('bounding_boxes_pessoas') != []:
+                                    for llm_pessoa in llm.get('bounding_boxes_pessoas'):
+                                        try:
+                                            if llm_pessoa[4] == "RESIDENTE_1":
+                                                presenca_residente = 1
+                                                residente_conf = float(llm_pessoa[5])
+                                        except:
+                                            continue
                             else:
                                 qtde_pessoas_llm = 0
                                 queda_llm=0
@@ -141,6 +151,8 @@ def tabelao(json_str, codId_franquia):
                                 classificacao_acao = ""
                                 presenca_cama = {}
                                 queda_conf = 0
+                                presenca_residente = 0
+                                residente_conf = 0
 
                         resultado = {
                                 "timestamp": timestamp,
@@ -169,6 +181,8 @@ def tabelao(json_str, codId_franquia):
                                 "acao_enfermeiro": acao_enfermeiro,
                                 "classificacao_acao": classificacao_acao,
                                 "presenca_cama": presenca_cama,
+                                "presenca_residente": presenca_residente,
+                                "residente_conf": residente_conf
                             }
                         lista_dataframe.append(resultado)
 
@@ -226,6 +240,8 @@ def tabelao(json_str, codId_franquia):
                                         "acao_enfermeiro": "",
                                         "classificacao_acao": "",
                                         "presenca_cama": {},
+                                        "presenca_residente": 0,
+                                        "residente_conf": 0                                        
                                         }
                                     lista_dataframe.append(resultado)
 
@@ -308,7 +324,7 @@ def processar_blocos(df_extracted):
                 df_tratado = df_extracted[(df_extracted['residente'] == residente) & (df_extracted['local'] == local) & (df_extracted['area'] == area)].copy()
                 for coluna in df_tratado.columns:
                     # if coluna != 'timestamp' and coluna != 'alarme_id':
-                    if coluna  in ['people', 'mov', 'queda', 'colaborador', 'pessoa' ,'presenc', 'mov_area', 'deitada','qtde_pessoas_llm', 'presenca_enfermeiros', 'presenca_cama_flag', 'pose_deitado' ]:
+                    if coluna  in ['people', 'mov', 'queda', 'colaborador', 'pessoa' ,'presenc', 'mov_area', 'deitada','qtde_pessoas_llm', 'presenca_enfermeiros', 'presenca_cama_flag', 'pose_deitado', 'presenc_residente' ]:
 
                         # Identificar os períodos de ausência (presenca_comodo == 0)
                         df_tratado['absence'] = (df_tratado[coluna] == 0).astype(int)
@@ -337,7 +353,7 @@ def processar_blocos(df_extracted):
 
                 for coluna in df_tratado.columns:
                     # if coluna != 'timestamp' and coluna != 'alarme_id':
-                    if coluna  in ['people', 'mov', 'queda',  'colaborador', 'pessoa' , 'presenc', 'mov_area', 'deitada', 'qtde_pessoas_llm', 'presenca_enfermeiros', 'presenca_cama_flag', 'pose_deitado']:
+                    if coluna  in ['people', 'mov', 'queda',  'colaborador', 'pessoa' , 'presenc', 'mov_area', 'deitada', 'qtde_pessoas_llm', 'presenca_enfermeiros', 'presenca_cama_flag', 'pose_deitado', 'presenca_residente']:
 
                         # Filtrar os períodos de presença (presenca_comodo == 1)
                         df_presence = df_tratado[df_tratado[coluna] == 1].copy()
@@ -483,7 +499,8 @@ def grafico_dados_brutos(df_extracted):
     fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['qtde_enfermeiros'], name="qtde_enfermeiros"))
     fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['presenca_cama_flag'], name="presenca_cama_flag"))
     fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['pose_deitado'], name="pose_deitado"))
-
+    fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['presenca_residente'], name="presenca_residente"))
+    fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['residente_conf'], name="residente_conf", yaxis='y2'))
     fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['queda_conf'], name="queda_conf", yaxis='y2'))
     fig.add_trace(go.Scatter(x=df_grafico.timestamp, y=df_grafico['sensor_mov'], name='sensor_mov', yaxis='y2'))
     
